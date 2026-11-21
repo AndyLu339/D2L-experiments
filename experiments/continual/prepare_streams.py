@@ -153,7 +153,13 @@ def main():
     manifest = prepare(
         rows, args.output_dir, args.num_docs, args.sample_seed, args.order_seeds, source
     )
-    print(json.dumps(manifest, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {k: v for k, v in manifest.items() if k != "streams"},
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

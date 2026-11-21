@@ -82,6 +82,9 @@ uv run demo/app.py
 ### 🧪 Experimental Scripts
 To run any of the following scripts, use `uv run $PATH_TO_SCRIPT` from the root of this project.
 
+This fork adds a [SQuAD continual internalization experiment](experiments/continual/README.md)
+with document-grouped streams, cumulative LoRA evaluation, and online/final retention scoring.
+
 
 | Experiment                           | Data prep                             | Training                      | Evaluation                   | Notes                                                                                                                               |
 | ------------------------------------ | ------------------------------------- | ----------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
