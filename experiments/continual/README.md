@@ -3,6 +3,31 @@
 本目录用于加载作者的主实验检查点，比较逐篇重置与累计 chunk LoRA。
 第一阶段只做 SQuAD 1.1，不重新训练超网络。
 
+## 逐篇补充实验：50 篇、四种新顺序
+
+`run_immediate50` 固定原 seed 11 的前 50 篇，使用 seed 44、55、66、77
+重新排列同一集合。每加一篇后，A1、B2、B3、B4、B5 立即回答该篇全部问题；
+单篇 Reset（系数 1、0.5、0.25）分别对每篇独立评测一次，再按 doc_id 映射到
+四种顺序。B4/B5 每一步对所有已见文档统一按当前 K 重新缩放，且共享项只加一次。
+本运行不做历史文档回测，不能据此判定旧文档遗忘曲线。全部 50 篇和 token ID
+均保存，按要求不自动画图；之后作图只用每种顺序的前 30 个位置。
+
+从仓库根目录，在 Matpool 旧环境使用 `PYTHONPATH=src` 和原有离线缓存设置：
+
+```bash
+PYTHONPATH=src python -m experiments.continual.run_immediate50_compat \
+  --stream-dir results/continual/squad100 \
+  --checkpoint trained_d2l/gemma_2b_d2l/checkpoint-20000/pytorch_model.bin \
+  --output-dir results/continual/immediate50
+
+python -m experiments.continual.score_immediate50 \
+  --run-dir results/continual/immediate50
+```
+
+添加 `--plan-only` 可不使用 GPU 冻结清单并核对工作量；输出目录必须是新目录。
+正式运行先执行真实 Gemma 验收，通过后运行全部组；评分拒绝缺题、重复和状态
+不匹配。当前不支持断点续跑，失败结果和日志保留，重跑须使用新目录。
+
 ## 实验二：20 篇、三种顺序及加权对照
 
 具体定义见工作区根目录的 `Doc-to-LoRA_持续内化实验二方案.md`。新入口先取
