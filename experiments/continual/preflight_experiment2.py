@@ -52,7 +52,7 @@ def preflight(backend, documents):
 
     backend.location = {"group": "preflight", "step": 2}
     second_raw = backend.encode(second)
-    layer_idx = list(model.hypernet.layer_indices)[0]
+    layer_idx = int(list(model.hypernet.layer_indices)[0])
     name = next(iter(runner_raw))
     if name != "down_proj":
         raise ValueError("Preflight currently expects down_proj")
