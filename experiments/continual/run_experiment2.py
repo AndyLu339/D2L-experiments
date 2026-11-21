@@ -132,7 +132,7 @@ def main():
     source_dir = Path(__file__).resolve().parent
     source_files = [source_dir / name for name in (
         "experiment2.py", "preflight_experiment2.py", "run_experiment2.py", "run_stream.py",
-        "adapters.py", "score_experiment2.py", "score_stream.py", "common.py")]
+        "run_experiment2_compat.py", "adapters.py", "score_experiment2.py", "score_stream.py", "common.py")]
     source_files += [source_dir.parents[1] / "src/ctx_to_lora/modeling" / name
                      for name in ("hypernet.py", "lora_merger.py", "lora_layer.py")]
     config["source_sha256"] = {str(path): sha256_file(path) for path in source_files}

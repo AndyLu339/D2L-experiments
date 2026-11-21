@@ -22,6 +22,10 @@ python3 -m experiments.continual.run_experiment2 \
 在已配置的 GPU 环境，把 `python` 换成该环境的解释器；按原环境需要配置
 `PYTHONPATH=src`、模型缓存和兼容脚本。先执行真实模型验收：
 
+如果沿用 Matpool 的 Torch 2.1 / FlashAttention 2.6 环境，将以下命令中的
+`-m experiments.continual.run_experiment2` 替换为
+`-m experiments.continual.run_experiment2_compat`；它应用与首轮相同的兼容补丁。
+
 ```bash
 PYTHONPATH=src python -m experiments.continual.run_experiment2 \
   --stream-dir results/continual/squad100 \
