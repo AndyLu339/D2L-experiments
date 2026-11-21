@@ -3,6 +3,61 @@
 本目录用于加载作者的主实验检查点，比较逐篇重置与累计 chunk LoRA。
 第一阶段只做 SQuAD 1.1，不重新训练超网络。
 
+## 实验二：20 篇、三种顺序及加权对照
+
+具体定义见工作区根目录的 `Doc-to-LoRA_持续内化实验二方案.md`。新入口先取
+原 seed 11 流的前 20 篇，固定这个集合，再用 seed 22/33 分别打乱；不要把
+100 篇流的三个不同前缀当作同一个集合。每五篇分别评估正常累计、加强每组
+首篇、每组重置，以及整体缩放和固定目标缩放。只放大 A，且共享 bias 只加一次。
+
+在仓库根目录，先用纯计划模式确认冻结清单和工作量（不需要 PyTorch 或 GPU）：
+
+```bash
+python3 -m experiments.continual.run_experiment2 \
+  --stream-dir results/continual/squad100 \
+  --checkpoint trained_d2l/gemma_2b_d2l/checkpoint-20000/pytorch_model.bin \
+  --output-dir results/continual/experiment2-plan --plan-only
+```
+
+在已配置的 GPU 环境，把 `python` 换成该环境的解释器；按原环境需要配置
+`PYTHONPATH=src`、模型缓存和兼容脚本。先执行真实模型验收：
+
+```bash
+PYTHONPATH=src python -m experiments.continual.run_experiment2 \
+  --stream-dir results/continual/squad100 \
+  --checkpoint trained_d2l/gemma_2b_d2l/checkpoint-20000/pytorch_model.bin \
+  --output-dir results/continual/experiment2-preflight --preflight-only
+```
+
+通过后可使用新的输出目录追加 `--pilot`，先实际运行 seed 11 的第一个五篇
+节点并记录耗时。试跑标记为 `pilot_completed`，完整评分工具会拒绝把它当成
+正式结果；当前不支持把试跑预测导入后续正式运行。
+
+然后使用**新的输出目录**启动正式运行（入口也会先重新做一次验收）：
+
+```bash
+PYTHONPATH=src python -m experiments.continual.run_experiment2 \
+  --stream-dir results/continual/squad100 \
+  --checkpoint trained_d2l/gemma_2b_d2l/checkpoint-20000/pytorch_model.bin \
+  --output-dir results/continual/experiment2-full
+
+python3 -m experiments.continual.score_experiment2 \
+  --run-dir results/continual/experiment2-full
+```
+
+输出目录不能已存在；中断后目前不支持续跑，已有 JSONL 和 `status.json` 留作
+排错，重跑时使用新目录。GPU 验收失败会停止正式评测，不会生成完成状态。
+评测逐题保存原始 token ID、参考答案、状态与文档系数；完全相同的有序状态
+和问题会复用生成结果，`prediction_reused` 标识逻辑记录的复用。实际生成成本
+应查看 `resources.jsonl`，不要将复用记录的 `seconds` 重复相加。
+
+`config.json` 保存三种顺序、任务、依赖版本和检查点哈希，尽力解析本地模型
+权重文件并记录哈希；`resolved: false` 表示没有确认文件，不能声称已完成模型
+文件指纹核验。`preflight.json` 保存真实模型验收结果。评分拒绝不完整、重复或
+状态不匹配的预测；`summary.csv` 包含每个 seed 的节点和完整 20 篇汇总，
+`document_scores.csv` 列示逐篇结果，`paired_by_document.csv` 为同题配对差值，`seed_ranges.csv` 列示三个顺序的
+范围。按五篇组的首篇与其余四篇分列；最后一个状态不包含额外历史回测。
+
 从仓库根目录运行。`python` 应替换为已配置 D2L 依赖的环境解释器。
 
 ## 1. 固定文档流

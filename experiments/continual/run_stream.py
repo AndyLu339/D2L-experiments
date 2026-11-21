@@ -198,7 +198,7 @@ class D2LBackend:
             )
             tokens = output[0, ids.shape[-1] :]
             record["output_tokens"] = len(tokens)
-        return {
+        result = {
             "prediction": self.tokenizer.decode(tokens, skip_special_tokens=True),
             "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
             "input_tokens": ids.shape[-1],
@@ -206,6 +206,9 @@ class D2LBackend:
             "hit_output_limit": len(tokens) == self.args.max_new_tokens,
             "seconds": record["seconds"],
         }
+        if getattr(self.args, "save_token_ids", False):
+            result["output_token_ids"] = tokens.tolist()
+        return result
 
     def configuration(self):
         return {

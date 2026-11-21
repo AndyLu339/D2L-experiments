@@ -120,6 +120,24 @@ class AdapterTests(unittest.TestCase):
             outputs.append(model.base_model.layers[0].mlp.down_proj(x))
         torch.testing.assert_close(*outputs)
 
+    def test_scaling_only_a_scales_update_without_scaling_shared_bias(self):
+        model, raw = ToyModel(), delta()
+        x = torch.randn(1, 2, 4)
+        original_hash = adapter_fingerprint(raw)
+        results = []
+        for coefficient in (0, 0.25, 0.5, 1, 2):
+            state = CumulativeLoRA(model)
+            state.clear()
+            weighted = {name: {"A": pair["A"] * coefficient, "B": pair["B"]}
+                        for name, pair in raw.items()}
+            state.append(weighted)
+            state.bind()
+            results.append(model.base_model.layers[0].mlp.down_proj(x))
+        bias_only = results[0]
+        for coefficient, actual in zip((0, 0.25, 0.5, 1, 2), results):
+            torch.testing.assert_close(actual, bias_only + coefficient * (results[3] - bias_only))
+        self.assertEqual(original_hash, adapter_fingerprint(raw))
+
     def test_incompatible_or_nonfinite_delta_is_rejected(self):
         state = CumulativeLoRA(ToyModel())
         state.append(delta())
